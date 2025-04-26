@@ -12,7 +12,7 @@ struct MainTabView: View {
                 .tabItem {
                     Label("My Listings", systemImage: "envelope")
                 }
-            HomePage()
+            MatchesPage()
                 .tabItem {
                     Label("Calendar", systemImage: "calendar")
                         }
