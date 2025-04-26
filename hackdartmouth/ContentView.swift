@@ -1,24 +1,17 @@
-//
-//  ContentView.swift
-//  hackdartmouth
-//
-//  Created by Yuvaraj Goenka on 4/26/25.
-//
-
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @State private var isLoggedIn = false
 
-#Preview {
-    ContentView()
+    var body: some View {
+        NavigationStack {
+            if isLoggedIn {
+                MainTabView()
+            } else {
+                LoginPage(isLoggedIn: $isLoggedIn)
+
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
 }
