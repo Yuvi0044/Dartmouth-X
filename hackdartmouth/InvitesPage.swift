@@ -1,22 +1,23 @@
 import SwiftUI
 
 struct InvitesPage: View {
-    @State private var invites = ["Invite from Alice", "Invite from Charlie"]
+    @EnvironmentObject var userSession: UserSession
 
     var body: some View {
-        NavigationView {
-            List(invites, id: \.self) { invite in
-                HStack {
-                    Text(invite)
-                    Spacer()
-                    Button("Accept") {
-                        
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
+        VStack {
+            Text("Your Created Study Groups")
+                .font(.title)
+                .bold()
+                .padding(.bottom)
+
+            List(userSession.myCreatedSessions, id: \.self) { session in
+                Text(session)
+                    .padding()
             }
-            .navigationTitle("Invites")
         }
+        .navigationTitle("Invites")
+        .background(Color.black.ignoresSafeArea())
+        .foregroundColor(.white)
     }
 }
 

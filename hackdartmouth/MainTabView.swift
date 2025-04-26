@@ -3,19 +3,14 @@ import SwiftUI
 struct MainTabView: View {
     var body: some View {
         TabView {
-            HomePage()
-                .tabItem {
-                    Label("Subjects", systemImage: "book")
-                }
-            
-            FindPage()
+            HomePage()   // <-- FIXED!
                 .tabItem {
                     Label("Find", systemImage: "magnifyingglass")
                 }
             
             InvitesPage()
                 .tabItem {
-                    Label("Invites", systemImage: "envelope")
+                    Label("My Listings", systemImage: "envelope")
                 }
             
             ProfilePage()

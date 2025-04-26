@@ -2,72 +2,70 @@ import SwiftUI
 
 struct SelectSubjectPage: View {
     @EnvironmentObject var userSession: UserSession
-    @State private var subject = ""
-    @FocusState private var isTextFieldFocused: Bool
+    @State private var subjectText: String = ""
+    @State private var navigateToMain = false
 
     var body: some View {
-        VStack(spacing: 30) {
-            Spacer(minLength: 20)
+        VStack(spacing: 40) {
+            Spacer()
 
-            Text("Find your perfect study group!")
-                .font(.largeTitle)
+            Text("You have 24 hours to make a move and match with a group!")
+                .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-                .padding(.top, 10)
 
-            VStack(spacing: 5) {
-                TextField("Type your subject here...", text: $subject)
-                    .focused($isTextFieldFocused)
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Enter your subject...", text: $subjectText)
+                    .font(.title2)
                     .foregroundColor(.white)
-                    .font(.system(size: 24))
-                    .padding(.bottom, 5)
-                    .disableAutocorrection(true)
-                    .autocapitalization(.none)
+                    .padding(.bottom, 10)
+                    .background(Color.clear)
+                    .submitLabel(.done)
+                    .onSubmit {
+                        hideKeyboard()
+                    }
 
                 Rectangle()
                     .frame(height: 2)
                     .foregroundColor(.white)
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal)
 
-            VStack(spacing: 18) {
+            VStack(spacing: 20) {
                 Button(action: {
-                    isTextFieldFocused = false
-                    userSession.study = subject
+                    // 🚀 This will now take you to MainTabView
+                    userSession.study = subjectText
+                    userSession.hasSelectedSubject = true
+                    navigateToMain = true
                 }) {
-                    Text("Look for Study Group")
-                        .fontWeight(.semibold)
+                    Text("Look for Study Groups")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.purple)
+                        .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(20)
+                        .cornerRadius(12)
                 }
 
-                Button(action: {
-                    isTextFieldFocused = false
-                    userSession.study = subject
-                }) {
-                    Text("Create Your Own Study Group")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.purple)
-                        .foregroundColor(.white)
-                        .cornerRadius(20)
-                }
+                
             }
-            .padding(.horizontal, 30)
+            .padding(.horizontal)
 
             Spacer()
+
+            // Hidden NavigationLink
+            NavigationLink(destination: MainTabView(), isActive: $navigateToMain)
+            {
+                EmptyView()
+            }
         }
         .background(Color.black.ignoresSafeArea())
-        .preferredColorScheme(.dark)
-        .onTapGesture {
-            isTextFieldFocused = false
-        }
+    }
+
+    // Hide Keyboard when pressing return
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 

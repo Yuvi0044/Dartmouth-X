@@ -2,14 +2,15 @@ import SwiftUI
 
 @main
 struct StudyBuddyApp: App {
-    @StateObject var userSession = UserSession()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @StateObject private var userSession = UserSession()
 
     var body: some Scene {
         WindowGroup {
             NavigationStack {
                 ContentView()
-                    .environmentObject(userSession)
             }
+            .environmentObject(userSession)
         }
     }
 }
