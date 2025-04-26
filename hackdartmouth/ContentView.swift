@@ -1,17 +1,24 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var isLoggedIn = false
+    @StateObject private var userSession = UserSession()
 
     var body: some View {
         NavigationStack {
-            if isLoggedIn {
-                MainTabView()
+            if userSession.isLoggedIn {
+                if userSession.hasSelectedSubject {
+                    MainTabView()
+                        .environmentObject(userSession)
+                } else {
+                    SelectSubjectPage()
+                        .environmentObject(userSession)
+                }
             } else {
-                LoginPage(isLoggedIn: $isLoggedIn)
-
+                LoginPage()
+                    .environmentObject(userSession)
             }
         }
         .preferredColorScheme(.dark)
     }
 }
+

@@ -1,80 +1,105 @@
 import SwiftUI
 
 struct CreateAccountPage: View {
-    @Binding var isLoggedIn: Bool
+    @EnvironmentObject var userSession: UserSession
+
     @State private var email = ""
     @State private var name = ""
     @State private var university = ""
     @State private var phoneNumber = ""
-    @State private var accountCreated = false
+    @State private var password = ""
+    @State private var study = ""
+
+    @State private var signupError = ""
+    @State private var showSelectSubject = false
 
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
+        if showSelectSubject {
+            // ✅ When account created, permanently move to SelectSubjectPage
+            SelectSubjectPage()
+                .environmentObject(userSession)
+        } else {
+            VStack(spacing: 20) {
+                Spacer()
 
-            if accountCreated {
-                VStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .resizable()
-                        .frame(width: 100, height: 100)
-                        .foregroundColor(.green)
-                        .scaleEffect(accountCreated ? 1.2 : 1.0)
-                        .animation(.easeIn(duration: 0.5), value: accountCreated)
-                    
-                    Text("Account Created!")
-                        .font(.title2)
-                        .foregroundColor(.green)
-                        .padding(.top)
-                }
-            } else {
                 Text("Create Account")
                     .font(.largeTitle)
                     .fontWeight(.bold)
+                    .foregroundColor(.white)
 
-                TextField("University Email", text: $email)
-                    .keyboardType(.emailAddress)
-                    .autocapitalization(.none)
-                    .padding()
-                    .background(Color(.systemGray5))
-                    .cornerRadius(10)
+                VStack(spacing: 15) {
+                    TextField("University Email", text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .cornerRadius(10)
 
-                TextField("Full Name", text: $name)
-                    .padding()
-                    .background(Color(.systemGray5))
-                    .cornerRadius(10)
+                    TextField("Full Name", text: $name)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .cornerRadius(10)
 
-                TextField("University Name", text: $university)
-                    .padding()
-                    .background(Color(.systemGray5))
-                    .cornerRadius(10)
+                    TextField("University Name", text: $university)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .cornerRadius(10)
 
-                TextField("Phone Number", text: $phoneNumber)
-                    .keyboardType(.phonePad)
-                    .padding()
-                    .background(Color(.systemGray5))
-                    .cornerRadius(10)
+                    TextField("Phone Number", text: $phoneNumber)
+                        .keyboardType(.phonePad)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .cornerRadius(10)
+
+                    SecureField("Password", text: $password)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .cornerRadius(10)
+
+                    TextField("What are you studying?", text: $study)
+                        .padding()
+                        .background(Color(.systemGray5))
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal)
 
                 Button("Submit") {
-                    withAnimation {
-                        accountCreated = true
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        isLoggedIn = true
-                    }
+                    createAccount()
                 }
-                .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.blue)
                 .foregroundColor(.white)
-                .cornerRadius(10)
-                .padding(.top)
-            }
+                .cornerRadius(12)
+                .padding(.horizontal)
 
-            Spacer()
+                if !signupError.isEmpty {
+                    Text(signupError)
+                        .foregroundColor(.red)
+                        .padding(.horizontal)
+                }
+
+                Spacer()
+            }
+            .background(Color.black.ignoresSafeArea())
+            .preferredColorScheme(.dark)
         }
-        .padding()
-        .background(Color.black.ignoresSafeArea())
+    }
+
+    func createAccount() {
+        // 🛠 (simulate API success response)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            userSession.email = email
+            userSession.name = name
+            userSession.university = university
+            userSession.phoneNumber = phoneNumber
+            userSession.study = ""
+            userSession.isLoggedIn = true
+
+            showSelectSubject = true   // ✅ This permanently moves you
+        
+        }
+        
     }
 }
 
