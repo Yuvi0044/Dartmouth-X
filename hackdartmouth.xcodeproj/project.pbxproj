@@ -58,9 +58,22 @@
 		CA1E5C7B2DBD04E90019B907 /* hackdartmouthUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = hackdartmouthUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CA4F1A0A2DBD9CFC001F6F18 /* Exceptions for "hackdartmouth" folder in "hackdartmouth" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				CreateAccount.swift,
+			);
+			target = CA1E5C602DBD04E90019B907 /* hackdartmouth */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CA1E5C632DBD04E90019B907 /* hackdartmouth */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CA4F1A0A2DBD9CFC001F6F18 /* Exceptions for "hackdartmouth" folder in "hackdartmouth" target */,
+			);
 			path = hackdartmouth;
 			sourceTree = "<group>";
 		};
