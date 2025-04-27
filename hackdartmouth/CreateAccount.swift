@@ -140,4 +140,3 @@ struct CreateAccountPage: View {
         }.resume()
     }
 }
-

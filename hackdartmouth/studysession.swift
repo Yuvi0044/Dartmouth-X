@@ -1,11 +1,16 @@
 import Foundation
 
-struct StudySession: Identifiable, Hashable {
-    let id = UUID()
-    var subject: String
-    var hostName: String
-    var time: String
-    var attendees: [String] // list of students who joined
-}
+struct StudyEvent: Codable, Identifiable {
+    var id = UUID().uuidString
+    var name: String
+    var chapter: String?
+    var duration: String?
+    var startTime: String?
 
+    var isAccepted: Bool = false
+
+    private enum CodingKeys: String, CodingKey {
+        case name, chapter, duration, startTime
+    }
+}
 

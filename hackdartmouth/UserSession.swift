@@ -13,4 +13,3 @@ class UserSession: ObservableObject {
     @Published var myCreatedSessions: [String] = []   // for InvitesPage
     @Published var availableSessions: [String] = []   // for FindPage
 }
-

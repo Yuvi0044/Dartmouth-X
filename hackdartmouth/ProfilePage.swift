@@ -53,4 +53,3 @@ struct ProfilePage: View {
         userSession.phoneNumber = ""
     }
 }
-

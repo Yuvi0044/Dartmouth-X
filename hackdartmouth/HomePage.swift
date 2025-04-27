@@ -1,15 +1,9 @@
 import SwiftUI
 
 struct HomePage: View {
-    @State private var showRequestInvite = false
-    @State private var selectedListing = ""
-    @State private var isPlusButtonPressed = false
+    @EnvironmentObject var userSession: UserSession
+    @State private var studyEvents: [StudyEvent] = []
     @State private var pressedListingIndex: Int? = nil
-
-    let listings = ["Chemistry: Organic", "Chemistry: General Chemistry", "Biology: Photosynthesis"]
-    let descriptions = ["Studying chapter 3 in Orgo", "Studying chapter 2 in Gen Chem, Matter", "Clearing concepts of chlorophyll"]
-    let durations = ["3 hours", "1 hour", "15 mins"]
-    
 
     var body: some View {
         NavigationView {
@@ -21,59 +15,65 @@ struct HomePage: View {
                         .padding(.top, 40)
 
                     Spacer()
-                    
+
                     Button(action: {
-                        // Plus button action
+                        fetchStudyEvents()
                     }) {
-                        Image(systemName: "plus")
+                        Image(systemName: "arrow.clockwise")
                             .font(.title2)
                             .padding(10)
-                            .background(isPlusButtonPressed ? Color.orange.opacity(0.7) : Color.orange)
+                            .background(Color.orange)
                             .foregroundColor(.white)
                             .clipShape(Circle())
                             .shadow(color: Color.orange.opacity(0.4), radius: 8, x: 0, y: 4)
                     }
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { _ in isPlusButtonPressed = true }
-                            .onEnded { _ in isPlusButtonPressed = false }
-                    )
                 }
                 .padding(.horizontal)
                 .padding(.top, 40)
 
                 ScrollView {
                     VStack(spacing: 20) {
-                        ForEach(listings.indices, id: \.self) { index in
-                            Button(action: {
-                                selectedListing = listings[index]
-                                showRequestInvite = true
-                            }) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(listings[index])
-                                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                        .foregroundColor(.black)
+                        ForEach(studyEvents.indices, id: \.self) { index in
+                            let event = studyEvents[index]
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(event.name)
+                                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.black)
 
-                                    Text(descriptions[index])
-                                        .font(.system(size: 14, weight: .regular, design: .rounded))
-                                        .foregroundColor(.gray)
+                                Text("Chapter: \(event.chapter ?? "N/A")")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
 
-                                    Text("Duration: \(durations[index])")
-                                        .font(.system(size: 12, weight: .light, design: .rounded))
-                                        .foregroundColor(.gray)
+                                Text("Duration: \(event.duration ?? "N/A")")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+
+                                Text("Start Time: \(event.startTime ?? "N/A")")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+
+                                Button(action: {
+                                    acceptEvent(at: index)
+                                }) {
+                                    Text(event.isAccepted ? "Accepted" : "Accept")
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(event.isAccepted ? Color.green : Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(10)
                                 }
-                                .padding()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(pressedListingIndex == index ? Color.gray.opacity(0.3) : Color.white)
-                                .cornerRadius(20)
-                                .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 6)
-                                .padding(.horizontal)
+                                .padding(.top, 10)
+                                .disabled(event.isAccepted) // Disable button after accept
                             }
-                            .simultaneousGesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { _ in pressedListingIndex = index }
-                                    .onEnded { _ in pressedListingIndex = nil }
-                            )
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(pressedListingIndex == index ? Color.gray.opacity(0.3) : Color.white)
+                            .cornerRadius(20)
+                            .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 6)
+                            .padding(.horizontal)
+                            .onTapGesture {
+                                pressedListingIndex = index
+                            }
                         }
                     }
                     .padding(.top, 10)
@@ -81,17 +81,51 @@ struct HomePage: View {
 
                 Spacer()
             }
-            .background(Color(red: 249/255, green: 244/255, blue: 233/255))
+            .background(Color(red: 249/255, blue: 244/255, blue: 233/255))
             .ignoresSafeArea()
             .navigationBarHidden(true)
         }
-        .alert(isPresented: $showRequestInvite) {
-            Alert(
-                title: Text("Request Invite"),
-                message: Text("Do you want to request an invite for \(selectedListing)?"),
-                primaryButton: .default(Text("Yes")),
-                secondaryButton: .cancel(Text("No"))
-            )
+        .onAppear {
+            fetchStudyEvents()
         }
     }
+
+    func fetchStudyEvents() {
+        guard let url = URL(string: "https://able-only-chamois.ngrok-free.app/view_study_events?email=\(userSession.email)&topic=\(userSession.study)") else {
+            print("❌ Invalid URL")
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("❌ Network error: \(error.localizedDescription)")
+                    return
+                }
+
+                guard let data = data else {
+                    print("❌ No data received")
+                    return
+                }
+
+                do {
+                    let decoder = JSONDecoder()
+                    let events = try decoder.decode([StudyEvent].self, from: data)
+                    studyEvents = events
+                    print("✅ Successfully decoded study events")
+                } catch {
+                    print("❌ Failed to decode: \(error.localizedDescription)")
+                }
+            }
+        }.resume()
+    }
+
+    func acceptEvent(at index: Int) {
+        studyEvents[index].isAccepted = true
+        print("✅ Accepted event: \(studyEvents[index].name)")
+    }
 }
+
