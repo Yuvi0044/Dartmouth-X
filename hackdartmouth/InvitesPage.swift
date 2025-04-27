@@ -20,3 +20,4 @@ struct InvitesPage: View {
         .foregroundColor(.white)
     }
 }
+
