@@ -87,19 +87,57 @@ struct CreateAccountPage: View {
     }
 
     func createAccount() {
-        // 🛠 (simulate API success response)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            userSession.email = email
-            userSession.name = name
-            userSession.university = university
-            userSession.phoneNumber = phoneNumber
-            userSession.study = ""
-            userSession.isLoggedIn = true
-
-            showSelectSubject = true   // ✅ This permanently moves you
-        
+        guard let url = URL(string: "https://able-only-chamois.ngrok-free.app/add_user") else {
+            signupError = "Invalid URL."
+            return
         }
-        
+
+        let user = [
+            "email": email,
+            "name": name,
+            "university": university,
+            "phoneNumber": phoneNumber,
+            "password": password,
+            "study": study
+        ]
+
+        guard let jsonData = try? JSONSerialization.data(withJSONObject: user) else {
+            signupError = "Failed to encode user data."
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    signupError = "Network error: \(error.localizedDescription)"
+                    return
+                }
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    signupError = "Invalid server response."
+                    return
+                }
+
+                if httpResponse.statusCode == 201 {
+                    // ✅ Account created successfully
+                    userSession.email = email
+                    userSession.name = name
+                    userSession.university = university
+                    userSession.phoneNumber = phoneNumber
+                    userSession.study = study
+                    userSession.isLoggedIn = true
+                    showSelectSubject = true
+                } else {
+                    // 🚨 Handle error
+                    signupError = "Failed to create account. (Status code: \(httpResponse.statusCode))"
+                }
+            }
+        }.resume()
     }
 }
 
