@@ -1,89 +1,77 @@
 import SwiftUI
 
 struct HomePage: View {
+    @EnvironmentObject var userSession: UserSession
+    @State private var studyEvents: [[String: Any]] = []
     @State private var showRequestInvite = false
     @State private var selectedListing = ""
-    @State private var isPlusButtonPressed = false
-    @State private var pressedListingIndex: Int? = nil
-
-    let listings = ["Chemistry: Organic", "Chemistry: General Chemistry", "Biology: Photosynthesis"]
-    let descriptions = ["Studying chapter 3 in Orgo", "Studying chapter 2 in Gen Chem, Matter", "Clearing concepts of chlorophyll"]
-    let durations = ["3 hours", "1 hour", "15 mins"]
-    
+    @State private var isLoading = false
 
     var body: some View {
         NavigationView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack {
                 HStack {
                     Text("View Listings")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
                         .foregroundColor(.black)
                         .padding(.top, 40)
 
                     Spacer()
-                    
-                    Button(action: {
-                        // Plus button action
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.title2)
-                            .padding(10)
-                            .background(isPlusButtonPressed ? Color.orange.opacity(0.7) : Color.orange)
-                            .foregroundColor(.white)
-                            .clipShape(Circle())
-                            .shadow(color: Color.orange.opacity(0.4), radius: 8, x: 0, y: 4)
-                    }
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { _ in isPlusButtonPressed = true }
-                            .onEnded { _ in isPlusButtonPressed = false }
-                    )
+
+                    // ❌ No manual refresh button anymore (we discussed)
                 }
                 .padding(.horizontal)
                 .padding(.top, 40)
 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        ForEach(listings.indices, id: \.self) { index in
-                            Button(action: {
-                                selectedListing = listings[index]
-                                showRequestInvite = true
-                            }) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(listings[index])
-                                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                        .foregroundColor(.black)
+                if isLoading {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            ForEach(Array(studyEvents.enumerated()), id: \.offset) { index, event in
+                                Button(action: {
+                                    selectedListing = event["name"] as? String ?? "Unknown"
+                                    showRequestInvite = true
+                                }) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text(event["name"] as? String ?? "No Name")
+                                            .font(.headline)
+                                            .foregroundColor(.black)
 
-                                    Text(descriptions[index])
-                                        .font(.system(size: 14, weight: .regular, design: .rounded))
-                                        .foregroundColor(.gray)
+                                        Text("Chapter: \(event["chapter"] as? String ?? "N/A")")
+                                            .font(.subheadline)
+                                            .foregroundColor(.gray)
 
-                                    Text("Duration: \(durations[index])")
-                                        .font(.system(size: 12, weight: .light, design: .rounded))
-                                        .foregroundColor(.gray)
+                                        Text("Duration: \(event["duration"] as? String ?? "N/A")")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+
+                                        Text("Start Time: \(event["startTime"] as? String ?? "N/A")")
+                                            .font(.caption2)
+                                            .foregroundColor(.gray)
+                                    }
+                                    .padding()
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color.white)
+                                    .cornerRadius(12)
+                                    .shadow(radius: 3)
+                                    .padding(.horizontal)
                                 }
-                                .padding()
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(pressedListingIndex == index ? Color.gray.opacity(0.3) : Color.white)
-                                .cornerRadius(20)
-                                .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 6)
-                                .padding(.horizontal)
                             }
-                            .simultaneousGesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { _ in pressedListingIndex = index }
-                                    .onEnded { _ in pressedListingIndex = nil }
-                            )
                         }
+                        .padding(.top, 10)
                     }
-                    .padding(.top, 10)
                 }
-
-                Spacer()
             }
             .background(Color(red: 249/255, green: 244/255, blue: 233/255))
             .ignoresSafeArea()
             .navigationBarHidden(true)
+        }
+        .onAppear {
+            fetchStudyEvents()
         }
         .alert(isPresented: $showRequestInvite) {
             Alert(
@@ -94,4 +82,60 @@ struct HomePage: View {
             )
         }
     }
+
+    func fetchStudyEvents() {
+        guard var components = URLComponents(string: "https://able-only-chamois.ngrok-free.app/view_study_events") else {
+            print("❌ Invalid URL")
+            return
+        }
+
+        components.queryItems = [
+            URLQueryItem(name: "email", value: userSession.email),
+            URLQueryItem(name: "topic", value: userSession.study)
+        ]
+
+        guard let url = components.url else {
+            print("❌ Failed to construct URL with parameters")
+            return
+        }
+
+        isLoading = true
+        studyEvents = []
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                isLoading = false
+
+                if let error = error {
+                    print("❌ Network error: \(error.localizedDescription)")
+                    return
+                }
+
+                guard let data = data else {
+                    print("❌ No data received")
+                    return
+                }
+
+                do {
+                    if let array = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] {
+                        studyEvents = array
+                        print("✅ Successfully parsed study events")
+                        
+                        // Optional: print each event
+                        for event in studyEvents {
+                            print("📦 Event: \(event)")
+                        }
+                    } else {
+                        print("❌ Server did not return an array")
+                    }
+                } catch {
+                    print("❌ Failed to parse JSON: \(error.localizedDescription)")
+                }
+            }
+        }.resume()
+    }
 }
+
