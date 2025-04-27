@@ -63,7 +63,7 @@ struct LoginPage: View {
             .foregroundColor(.blue)
             .padding(.top, 10)
             .sheet(isPresented: $showCreateAccount) {
-                CreateAccountPage()
+                CreateAccountPage
                     .environmentObject(userSession)
             }
 
@@ -125,4 +125,3 @@ struct LoginResponse: Codable {
     var status: String
     var message: String
 }
-
