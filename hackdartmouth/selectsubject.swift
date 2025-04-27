@@ -4,6 +4,7 @@ struct SelectSubjectPage: View {
     @EnvironmentObject var userSession: UserSession
     @State private var subjectText: String = ""
     @State private var navigateToMain = false
+    @State private var errorMessage = ""
 
     var body: some View {
         VStack(spacing: 40) {
@@ -35,10 +36,7 @@ struct SelectSubjectPage: View {
 
             VStack(spacing: 20) {
                 Button(action: {
-                    // 🚀 This will now take you to MainTabView
-                    userSession.study = subjectText
-                    userSession.hasSelectedSubject = true
-                    navigateToMain = true
+                    findStudyGroups()
                 }) {
                     Text("Look for Study Groups")
                         .frame(maxWidth: .infinity)
@@ -48,15 +46,18 @@ struct SelectSubjectPage: View {
                         .cornerRadius(12)
                 }
 
-                
+                if !errorMessage.isEmpty {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
             }
             .padding(.horizontal)
 
             Spacer()
 
-            // Hidden NavigationLink
-            NavigationLink(destination: MainTabView(), isActive: $navigateToMain)
-            {
+            NavigationLink(destination: MainTabView(), isActive: $navigateToMain) {
                 EmptyView()
             }
         }
@@ -67,4 +68,49 @@ struct SelectSubjectPage: View {
     func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
+
+    // API CALL
+    func findStudyGroups() {
+        guard var components = URLComponents(string: "https://able-only-chamois.ngrok-free.app/view_study_events") else {
+            errorMessage = "Invalid URL."
+            return
+        }
+
+        components.queryItems = [
+            URLQueryItem(name: "email", value: userSession.email),
+            URLQueryItem(name: "topic", value: subjectText)
+        ]
+
+        guard let url = components.url else {
+            errorMessage = "Failed to create request URL."
+            return
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    errorMessage = "Network error: \(error.localizedDescription)"
+                    return
+                }
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    errorMessage = "Invalid server response."
+                    return
+                }
+
+                if httpResponse.statusCode == 200 {
+                    // ✅ Success
+                    userSession.study = subjectText
+                    userSession.hasSelectedSubject = true
+                    navigateToMain = true
+                } else {
+                    errorMessage = "Failed to find study groups. (Status code: \(httpResponse.statusCode))"
+                }
+            }
+        }.resume()
+    }
 }
+
